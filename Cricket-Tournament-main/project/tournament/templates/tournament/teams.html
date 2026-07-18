@@ -1,0 +1,44 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Teams &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Teams</h1>
+        <form class="search-form" method="get" action="{% url 'teams' %}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search teams or coaches..." class="search-input">
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        </form>
+    </div>
+
+    {% if teams %}
+        <div class="team-grid">
+            {% for team in teams %}
+                <a href="{% url 'team_detail' team.pk %}" class="team-card glass">
+                    <div class="team-card-header">
+                        <img src="{{ team.logo_or_placeholder }}" alt="{{ team.name }}" class="team-logo">
+                        <div>
+                            <h3 class="team-card-name">{{ team.name }}</h3>
+                            <p class="team-card-coach">Coach: {{ team.coach_name|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="team-card-stats">
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">{{ team.players.count }}</span>
+                            <span class="mini-stat-label">Players</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">
+                                {% if team.points %}{{ team.points.points }}{% else %}0{% endif %}
+                            </span>
+                            <span class="mini-stat-label">Points</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No teams found. {% if query %}Try a different search.{% endif %}</p>
+    {% endif %}
+</section>
+{% endblock %}

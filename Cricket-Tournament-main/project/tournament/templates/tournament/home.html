@@ -1,0 +1,104 @@
+{% extends 'tournament/base.html' %}
+{% block title %}SkyCharan Tournament System &mdash; Cricket Tournament Management{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <p class="hero-tag">&#127951; Cricket Tournament Management System</p>
+        <h1 class="hero-title">Run Your Tournament <span class="accent">Like a Pro</span></h1>
+        <p class="hero-subtitle">Manage teams, players, matches, and live points tables all in one place. A complete platform for organizing cricket tournaments with real-time results and standings.</p>
+        <div class="hero-actions">
+            <a href="{% url 'schedule' %}" class="btn btn-primary">View Schedule</a>
+            <a href="{% url 'points_table' %}" class="btn btn-ghost">Points Table</a>
+        </div>
+    </div>
+</section>
+
+{% if tournament_winner %}
+<section class="winner-banner">
+    <div class="winner-card glass">
+        <span class="trophy">&#127942;</span>
+        <div>
+            <p class="winner-label">Tournament Champion</p>
+            <h2 class="winner-name">{{ tournament_winner.name }}</h2>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="stats-grid">
+    <div class="stat-card glass">
+        <span class="stat-icon">&#127937;</span>
+        <p class="stat-value">{{ total_teams }}</p>
+        <p class="stat-label">Teams</p>
+    </div>
+    <div class="stat-card glass">
+        <span class="stat-icon">&#127939;</span>
+        <p class="stat-value">{{ total_players }}</p>
+        <p class="stat-label">Players</p>
+    </div>
+    <div class="stat-card glass">
+        <span class="stat-icon">&#127944;</span>
+        <p class="stat-value">{{ total_matches }}</p>
+        <p class="stat-label">Matches</p>
+    </div>
+    <div class="stat-card glass">
+        <span class="stat-icon">&#9989;</span>
+        <p class="stat-value">{{ completed_matches }}</p>
+        <p class="stat-label">Completed</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Upcoming Matches</h2>
+        <a href="{% url 'schedule' %}" class="section-link">View All &rarr;</a>
+    </div>
+    {% if upcoming_matches %}
+        <div class="match-grid">
+            {% for match in upcoming_matches %}
+                <div class="match-card glass">
+                    <div class="match-teams">
+                        <div class="match-team">
+                            <img src="{{ match.team1.logo_or_placeholder }}" alt="{{ match.team1.name }}" class="team-logo-sm">
+                            <span>{{ match.team1.name }}</span>
+                        </div>
+                        <span class="vs">VS</span>
+                        <div class="match-team">
+                            <img src="{{ match.team2.logo_or_placeholder }}" alt="{{ match.team2.name }}" class="team-logo-sm">
+                            <span>{{ match.team2.name }}</span>
+                        </div>
+                    </div>
+                    <div class="match-info">
+                        <p>&#128197; {{ match.match_date|date:"M d, Y H:i" }}</p>
+                        <p>&#128205; {{ match.venue }}</p>
+                    </div>
+                    <span class="badge badge-upcoming">Upcoming</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No upcoming matches scheduled yet.</p>
+    {% endif %}
+</section>
+
+{% if top_teams %}
+<section class="section">
+    <div class="section-header">
+        <h2 class="section-title">Top Teams</h2>
+        <a href="{% url 'points_table' %}" class="section-link">Full Table &rarr;</a>
+    </div>
+    <div class="standings-preview glass">
+        {% for pt in top_teams %}
+            <div class="standings-row">
+                <span class="rank">#{{ forloop.counter }}</span>
+                <img src="{{ pt.team.logo_or_placeholder }}" alt="{{ pt.team.name }}" class="team-logo-xs">
+                <span class="team-name">{{ pt.team.name }}</span>
+                <span class="points-badge">{{ pt.points }} pts</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

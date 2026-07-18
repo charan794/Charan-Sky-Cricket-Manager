@@ -1,0 +1,84 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Manage Players &mdash; Dashboard{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Manage Players</h1>
+        <a href="{% url 'dashboard' %}" class="back-link">&larr; Dashboard</a>
+    </div>
+
+    <div class="dash-panel glass">
+        <h3 class="panel-title">Add New Player</h3>
+        <form method="post" action="{% url 'player_add' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="text" name="name" placeholder="Player name" required>
+            <select name="role">
+                <option value="Batsman">Batsman</option>
+                <option value="Bowler">Bowler</option>
+                <option value="All-rounder">All-rounder</option>
+            </select>
+            <select name="team" required>
+                <option value="">Select team</option>
+                {% for team in teams %}
+                    <option value="{{ team.pk }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="number" name="runs" placeholder="Runs" min="0" value="0">
+            <input type="number" name="wickets" placeholder="Wickets" min="0" value="0">
+            <button type="submit" class="btn btn-primary btn-sm">Add Player</button>
+        </form>
+    </div>
+
+    <div class="table-wrapper glass">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Team</th>
+                    <th>Runs</th>
+                    <th>Wickets</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                    <tr>
+                        <td>{{ player.name }}</td>
+                        <td><span class="role-badge role-{{ player.role|slugify }}">{{ player.role }}</span></td>
+                        <td>{{ player.team.name }}</td>
+                        <td>{{ player.runs }}</td>
+                        <td>{{ player.wickets }}</td>
+                        <td>
+                            <details class="edit-details" style="display: inline-block; margin-right: 8px;">
+                                <summary class="btn btn-ghost btn-sm">Edit</summary>
+                                <form method="post" action="{% url 'player_edit' player.pk %}" class="inline-form edit-form" style="position: absolute; right: 20px; background: var(--bg-secondary); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm); z-index: 10; gap: 8px; box-shadow: var(--shadow-md);">
+                                    {% csrf_token %}
+                                    <input type="text" name="name" value="{{ player.name }}" required style="width: 140px; padding: 6px;">
+                                    <select name="role" style="width: 110px; padding: 6px;">
+                                        <option value="Batsman" {% if player.role == 'Batsman' %}selected{% endif %}>Batsman</option>
+                                        <option value="Bowler" {% if player.role == 'Bowler' %}selected{% endif %}>Bowler</option>
+                                        <option value="All-rounder" {% if player.role == 'All-rounder' %}selected{% endif %}>All-rounder</option>
+                                    </select>
+                                    <select name="team" style="width: 140px; padding: 6px;">
+                                        {% for t in teams %}
+                                            <option value="{{ t.pk }}" {% if player.team.pk == t.pk %}selected{% endif %}>{{ t.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="number" name="runs" value="{{ player.runs }}" min="0" style="width: 80px; padding: 6px;">
+                                    <input type="number" name="wickets" value="{{ player.wickets }}" min="0" style="width: 80px; padding: 6px;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </form>
+                            </details>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{% url 'player_delete' player.pk %}', '{{ player.name|escapejs }}', 'player')">Delete</button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="empty-state">No players yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

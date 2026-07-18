@@ -1,0 +1,407 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Live Scoring Panel &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Live Scoring Panel</h1>
+        <a href="{% url 'manage_matches' %}" class="back-link">&larr; Back to Matches</a>
+    </div>
+
+    <!-- Live Score Display Card -->
+    <div class="dash-panel glass" style="margin-bottom: 2rem; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h2 id="battingTeamTitle" class="section-title" style="margin: 0; color: var(--primary);">{{ live_state.batting_team.name }} Innings</h2>
+                <p id="matchVersus" style="color: var(--text-secondary); margin-top: 4px; font-size: 0.9rem;">vs {{ live_state.bowling_team.name }}</p>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-upcoming" style="font-size: 0.9rem; padding: 6px 14px; background: rgba(52,211,153,0.1); color: var(--primary); border: 1px solid var(--border);">Innings: <span id="inningsNum">{{ live_state.innings }}</span></span>
+                <p id="targetDisplay" style="color: var(--accent); font-weight: 700; margin-top: 8px; font-size: 0.95rem; {% if live_state.innings == 1 %}display: none;{% endif %}">Target: <span id="targetRuns">{{ live_state.team1_target }}</span> runs</p>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; align-items: center; text-align: center;">
+            <div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Current Score</p>
+                <h1 style="font-family: var(--font-display); font-size: 4rem; font-weight: 800; line-height: 1; margin: 10px 0;"><span id="liveRuns">{{ live_state.runs }}</span>/<span id="liveWickets">{{ live_state.wickets }}</span></h1>
+            </div>
+            <div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Overs Bowled</p>
+                <h1 id="liveOvers" style="font-family: var(--font-display); font-size: 3.5rem; font-weight: 800; line-height: 1; margin: 10px 0; color: var(--text-secondary);">{{ live_state.overs_display }}</h1>
+            </div>
+            <div class="glass" style="padding: 1rem; border-radius: var(--radius-md); text-align: left; background: rgba(0,0,0,0.2);">
+                <p style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Partnership</p>
+                <p style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);"><span id="partnerRuns">{{ live_state.partnership_runs }}</span> Runs <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-secondary);">off <span id="partnerBalls">{{ live_state.partnership_balls }}</span> balls</span></p>
+                <div id="freeHitBadge" style="margin-top: 10px; display: {% if live_state.is_free_hit %}block{% else %}none{% endif %};">
+                    <span class="badge" style="background: rgba(251,191,36,0.15); color: var(--accent); border: 1px solid rgba(251,191,36,0.3); font-weight: 700;">★ FREE HIT</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; flex-wrap: wrap;">
+        <!-- Left Side: Scorer controls -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Batsmen & Bowler selection and display card -->
+            <div class="dash-panel glass" style="padding: 1.5rem;">
+                <h3 class="panel-title" style="border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px;">Active Personnel</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                    <!-- Striker selection -->
+                    <div style="background: rgba(52,211,153,0.03); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm);">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Striker (Active Bat)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="strikerSelect" class="search-select" style="flex: 1; padding: 8px; font-size: 0.85rem;">
+                                <option value="">Select Striker</option>
+                                {% for player in players_batting %}
+                                    <option value="{{ player.pk }}" {% if live_state.striker.pk == player.pk %}selected{% endif %}>{{ player.name }} ({{ player.runs }} runs)</option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="setPersonnel('striker')" class="btn btn-primary btn-sm" style="padding: 8px 12px;">Set</button>
+                        </div>
+                        <p style="margin-top: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">🏏 <span id="strikerName">{{ live_state.striker.name|default:"Not Assigned" }}</span> (<span id="strikerRuns">{{ live_state.striker.runs|default:0 }}</span>)</p>
+                    </div>
+
+                    <!-- Non-Striker selection -->
+                    <div style="background: rgba(52,211,153,0.03); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm);">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Non-Striker</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="nonStrikerSelect" class="search-select" style="flex: 1; padding: 8px; font-size: 0.85rem;">
+                                <option value="">Select Non-Striker</option>
+                                {% for player in players_batting %}
+                                    <option value="{{ player.pk }}" {% if live_state.non_striker.pk == player.pk %}selected{% endif %}>{{ player.name }} ({{ player.runs }} runs)</option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="setPersonnel('non_striker')" class="btn btn-primary btn-sm" style="padding: 8px 12px;">Set</button>
+                        </div>
+                        <p style="margin-top: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);">👤 <span id="nonStrikerName">{{ live_state.non_striker.name|default:"Not Assigned" }}</span> (<span id="nonStrikerRuns">{{ live_state.non_striker.runs|default:0 }}</span>)</p>
+                    </div>
+
+                    <!-- Bowler selection -->
+                    <div style="background: rgba(52,211,153,0.03); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm);">
+                        <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Bowler (Active Bowl)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="bowlerSelect" class="search-select" style="flex: 1; padding: 8px; font-size: 0.85rem;">
+                                <option value="">Select Bowler</option>
+                                {% for player in players_bowling %}
+                                    <option value="{{ player.pk }}" {% if live_state.current_bowler.pk == player.pk %}selected{% endif %}>{{ player.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button onclick="setPersonnel('bowler')" class="btn btn-primary btn-sm" style="padding: 8px 12px;">Set</button>
+                        </div>
+                        <p style="margin-top: 8px; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">🔴 <span id="bowlerName">{{ live_state.current_bowler.name|default:"Not Assigned" }}</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clicker scoring panel -->
+            <div class="dash-panel glass" style="padding: 1.5rem;">
+                <h3 class="panel-title" style="border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px; margin-bottom: 1.5rem;">Interactive Score Clicker</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Runs Section -->
+                    <div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; text-transform: uppercase;">Runs</p>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button onclick="recordBall('run', 0)" class="btn btn-ghost" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px;">0</button>
+                            <button onclick="recordBall('run', 1)" class="btn btn-ghost" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px;">1</button>
+                            <button onclick="recordBall('run', 2)" class="btn btn-ghost" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px;">2</button>
+                            <button onclick="recordBall('run', 3)" class="btn btn-ghost" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px;">3</button>
+                            <button onclick="recordBall('run', 4)" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px; font-weight: 700;">4</button>
+                            <button onclick="recordBall('run', 6)" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.1rem; min-width: 60px; font-weight: 700; background: var(--accent); color: var(--bg-primary);">6</button>
+                        </div>
+                    </div>
+
+                    <!-- Extras Section -->
+                    <div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; text-transform: uppercase;">Extras</p>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button onclick="recordBall('wide', 0)" class="btn btn-ghost" style="padding: 10px 20px; font-size: 0.9rem;">Wide (Wd)</button>
+                            <button onclick="recordBall('noball', 0)" class="btn btn-ghost" style="padding: 10px 20px; font-size: 0.9rem;">No-Ball (Nb)</button>
+                            <button onclick="recordBall('bye', 1)" class="btn btn-ghost" style="padding: 10px 20px; font-size: 0.9rem;">1 Bye (B)</button>
+                            <button onclick="recordBall('bye', 4)" class="btn btn-ghost" style="padding: 10px 20px; font-size: 0.9rem;">4 Byes (4B)</button>
+                        </div>
+                    </div>
+
+                    <!-- Dismissals Section -->
+                    <div>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; text-transform: uppercase;">Dismissals</p>
+                        <button onclick="recordBall('wicket', 0)" class="btn btn-danger" style="padding: 12px 30px; font-size: 1.1rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                            <span>⚠️ OUT! (Wicket)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Over history tracker & warnings -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Over History Tracker Panel -->
+            <div class="dash-panel glass" style="padding: 1.5rem; height: 100%;">
+                <h3 class="panel-title" style="border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px; margin-bottom: 1rem;">Over History</h3>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">Visual tracker for deliveries in this over:</p>
+                
+                <div id="overHistoryContainer" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem;">
+                    <!-- Dynamically populated circles -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Custom Modal for Innings/Match Complete -->
+<div id="transitionModal" class="modal-overlay">
+    <div class="modal-content glass" style="max-width: 500px; padding: 2.5rem;">
+        <span id="transitionEmoji" style="font-size: 3rem; display: block; margin-bottom: 1rem;">🎉</span>
+        <h2 id="transitionTitle" class="modal-title" style="color: var(--primary); font-size: 1.8rem; margin-bottom: 1rem;">Innings Complete</h2>
+        <p id="transitionMessage" class="modal-message" style="margin-bottom: 2rem; font-size: 1.05rem;">The first innings is completed. Transitioning to second innings now.</p>
+        <button id="transitionActionBtn" onclick="closeTransitionModal()" class="btn btn-primary btn-block">Continue</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const matchId = "{{ match.pk }}";
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Set Personnel
+    function setPersonnel(role) {
+        let selectElement;
+        let action;
+        if (role === 'striker') {
+            selectElement = document.getElementById('strikerSelect');
+            action = 'set_striker';
+        } else if (role === 'non_striker') {
+            selectElement = document.getElementById('nonStrikerSelect');
+            action = 'set_non_striker';
+        } else if (role === 'bowler') {
+            selectElement = document.getElementById('bowlerSelect');
+            action = 'set_bowler';
+        }
+
+        const playerId = selectElement.value;
+        if (!playerId) {
+            alert('Please select a player first.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('player_id', playerId);
+
+        fetch(`/api/match/${matchId}/ball/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                updateUI(data.state);
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // Record Ball Click
+    function recordBall(action, value) {
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('value', value);
+
+        fetch(`/api/match/${matchId}/ball/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else if (data.redirect) {
+                // Show finished popup
+                showFinishedModal(data.message, data.redirect);
+            } else if (data.message && data.target) {
+                // Innings Complete transition
+                showInningsCompleteModal(data.message, data.state);
+            } else {
+                updateUI(data.state);
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // Update UI based on state
+    function updateUI(state) {
+        if (!state) return;
+        document.getElementById('liveRuns').textContent = state.runs;
+        document.getElementById('liveWickets').textContent = state.wickets;
+        document.getElementById('liveOvers').textContent = state.overs;
+        document.getElementById('partnerRuns').textContent = state.partnership_runs;
+        document.getElementById('partnerBalls').textContent = state.partnership_balls;
+        document.getElementById('inningsNum').textContent = state.innings;
+
+        // Striker name / runs
+        document.getElementById('strikerName').textContent = state.striker ? state.striker : "Not Assigned";
+        document.getElementById('strikerRuns').textContent = state.striker ? state.striker_runs : 0;
+        if (state.striker_id) {
+            document.getElementById('strikerSelect').value = state.striker_id;
+        }
+
+        // Non-striker name / runs
+        document.getElementById('nonStrikerName').textContent = state.non_striker ? state.non_striker : "Not Assigned";
+        document.getElementById('nonStrikerRuns').textContent = state.non_striker ? state.non_striker_runs : 0;
+        if (state.non_striker_id) {
+            document.getElementById('nonStrikerSelect').value = state.non_striker_id;
+        }
+
+        // Bowler name
+        document.getElementById('bowlerName').textContent = state.bowler ? state.bowler : "Not Assigned";
+        if (state.bowler_id) {
+            document.getElementById('bowlerSelect').value = state.bowler_id;
+        } else {
+            document.getElementById('bowlerSelect').value = "";
+        }
+
+        // Teams & target
+        document.getElementById('battingTeamTitle').textContent = state.batting_team + " Innings";
+        document.getElementById('matchVersus').textContent = "vs " + state.bowling_team;
+
+        const targetDisplay = document.getElementById('targetDisplay');
+        if (state.innings === 2) {
+            targetDisplay.style.display = 'block';
+            document.getElementById('targetRuns').textContent = state.target;
+        } else {
+            targetDisplay.style.display = 'none';
+        }
+
+        // Free hit badge
+        const freeHitBadge = document.getElementById('freeHitBadge');
+        freeHitBadge.style.display = state.is_free_hit ? 'block' : 'none';
+
+        // Over history balls
+        const overHistory = document.getElementById('overHistoryContainer');
+        overHistory.innerHTML = '';
+        if (state.over_history) {
+            state.over_history.split(',').forEach(symbol => {
+                const circle = document.createElement('span');
+                circle.style.display = 'inline-flex';
+                circle.style.alignItems = 'center';
+                circle.style.justifyContent = 'center';
+                circle.style.width = '36px';
+                circle.style.height = '36px';
+                circle.style.borderRadius = '50%';
+                circle.style.fontSize = '0.85rem';
+                circle.style.fontWeight = 'bold';
+                circle.style.border = '1px solid var(--border)';
+                circle.textContent = symbol;
+
+                if (symbol === 'W') {
+                    circle.style.background = 'rgba(248,113,113,0.2)';
+                    circle.style.color = 'var(--error)';
+                    circle.style.borderColor = 'rgba(248,113,113,0.4)';
+                } else if (symbol.includes('Wd') || symbol.includes('Nb')) {
+                    circle.style.background = 'rgba(251,191,36,0.15)';
+                    circle.style.color = 'var(--accent)';
+                    circle.style.borderColor = 'rgba(251,191,36,0.3)';
+                } else if (symbol === '4' || symbol === '6') {
+                    circle.style.background = 'rgba(52,211,153,0.15)';
+                    circle.style.color = 'var(--primary)';
+                    circle.style.borderColor = 'rgba(52,211,153,0.3)';
+                } else {
+                    circle.style.background = 'rgba(255,255,255,0.05)';
+                    circle.style.color = 'var(--text-secondary)';
+                }
+
+                overHistory.appendChild(circle);
+            });
+        }
+    }
+
+    // Modal Control
+    function showInningsCompleteModal(message, state) {
+        document.getElementById('transitionEmoji').textContent = "🎯";
+        document.getElementById('transitionTitle').textContent = "Innings Complete";
+        document.getElementById('transitionMessage').textContent = message;
+        
+        const btn = document.getElementById('transitionActionBtn');
+        btn.textContent = "Start Second Innings";
+        btn.onclick = function() {
+            closeTransitionModal();
+            // Force reloading page to fetch new squad selections for Innings 2 batting team
+            window.location.reload();
+        };
+        
+        document.getElementById('transitionModal').classList.add('active');
+    }
+
+    function showFinishedModal(message, redirectUrl) {
+        document.getElementById('transitionEmoji').textContent = "🏆";
+        document.getElementById('transitionTitle').textContent = "Match Finished";
+        document.getElementById('transitionMessage').textContent = message;
+        
+        const btn = document.getElementById('transitionActionBtn');
+        btn.textContent = "Return to Dashboard";
+        btn.onclick = function() {
+            window.location.href = redirectUrl;
+        };
+        
+        document.getElementById('transitionModal').classList.add('active');
+    }
+
+    function closeTransitionModal() {
+        document.getElementById('transitionModal').classList.remove('active');
+    }
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+        // Build the initial over history UI
+        const initialHistory = "{{ live_state.over_history }}";
+        const mockState = {
+            runs: "{{ live_state.runs }}",
+            wickets: "{{ live_state.wickets }}",
+            overs: "{{ live_state.overs_display }}",
+            partnership_runs: "{{ live_state.partnership_runs }}",
+            partnership_balls: "{{ live_state.partnership_balls }}",
+            innings: {{ live_state.innings }},
+            striker: "{{ live_state.striker.name|default:'' }}",
+            striker_id: "{{ live_state.striker.id|default:'' }}",
+            striker_runs: "{{ live_state.striker.runs|default:0 }}",
+            non_striker: "{{ live_state.non_striker.name|default:'' }}",
+            non_striker_id: "{{ live_state.non_striker.id|default:'' }}",
+            non_striker_runs: "{{ live_state.non_striker.runs|default:0 }}",
+            bowler: "{{ live_state.current_bowler.name|default:'' }}",
+            bowler_id: "{{ live_state.current_bowler.id|default:'' }}",
+            batting_team: "{{ live_state.batting_team.name }}",
+            bowling_team: "{{ live_state.bowling_team.name }}",
+            target: "{{ live_state.team1_target }}",
+            is_free_hit: {% if live_state.is_free_hit %}true{% else %}false{% endif %},
+            over_history: initialHistory
+        };
+        updateUI(mockState);
+    });
+</script>
+{% endblock %}

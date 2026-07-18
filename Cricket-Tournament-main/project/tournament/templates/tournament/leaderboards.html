@@ -1,0 +1,117 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Leaderboards — SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Tournament Leaderboards</h1>
+        <p class="page-subtitle">Top individual performances across all matches</p>
+    </div>
+
+    <div class="leaderboards-container">
+        <!-- Top Batsmen -->
+        <div class="leaderboard-card glass">
+            <h3 class="leaderboard-title">
+                <span class="emoji">&#127951;</span> Top Batsmen
+            </h3>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th style="text-align: right;">Runs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in top_batsmen %}
+                            <tr>
+                                <td class="rank-cell">#{{ forloop.counter }}</td>
+                                <td style="font-weight: 600;">{{ player.name }}</td>
+                                <td>
+                                    <img src="{{ player.team.logo_or_placeholder }}" alt="{{ player.team.name }}" class="team-logo-xs">
+                                    {{ player.team.name }}
+                                </td>
+                                <td class="points-cell" style="text-align: right;">{{ player.runs }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="empty-state">No stats yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Bowlers -->
+        <div class="leaderboard-card glass">
+            <h3 class="leaderboard-title">
+                <span class="emoji">&#129342;</span> Top Bowlers
+            </h3>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th style="text-align: right;">Wickets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in top_bowlers %}
+                            <tr>
+                                <td class="rank-cell">#{{ forloop.counter }}</td>
+                                <td style="font-weight: 600;">{{ player.name }}</td>
+                                <td>
+                                    <img src="{{ player.team.logo_or_placeholder }}" alt="{{ player.team.name }}" class="team-logo-xs">
+                                    {{ player.team.name }}
+                                </td>
+                                <td class="points-cell" style="text-align: right; color: var(--error);">{{ player.wickets }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="empty-state">No stats yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top All-rounders / MVPs -->
+        <div class="leaderboard-card glass">
+            <h3 class="leaderboard-title">
+                <span class="emoji">&#127942;</span> Most Valuable Players
+            </h3>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Runs</th>
+                            <th>Wkts</th>
+                            <th style="text-align: right;">MVP Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in top_allrounders %}
+                            <tr>
+                                <td class="rank-cell">#{{ forloop.counter }}</td>
+                                <td>
+                                    <div style="font-weight: 600;">{{ player.name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ player.team.name }}</div>
+                                </td>
+                                <td>{{ player.runs }}</td>
+                                <td>{{ player.wickets }}</td>
+                                <td class="points-cell" style="text-align: right; color: var(--accent);">{{ player.mvp_score }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="empty-state">No stats yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

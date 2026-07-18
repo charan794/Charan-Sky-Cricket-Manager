@@ -1,0 +1,260 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Live Scorecard &mdash; {{ match.team1.name }} vs {{ match.team2.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Live Match Scorecard</h1>
+        <a href="{% url 'schedule' %}" class="back-link">&larr; Back to Schedule</a>
+    </div>
+
+    <!-- Live Score Card -->
+    <div id="scorecardBox" class="dash-panel glass" style="padding: 2.5rem; text-align: center; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-around; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+            <!-- Team 1 -->
+            <div style="flex: 1; min-width: 140px;">
+                <img src="{{ match.team1.logo_or_placeholder }}" alt="{{ match.team1.name }}" class="team-logo-lg" style="margin: 0 auto 10px;">
+                <h3 style="font-family: var(--font-display); font-size: 1.4rem;">{{ match.team1.name }}</h3>
+            </div>
+            
+            <!-- VS / Live status -->
+            <div style="min-width: 160px; text-align: center;">
+                <span id="matchStatusBadge" class="badge badge-upcoming" style="padding: 6px 16px; font-size: 0.85rem; font-weight: 700;">Loading...</span>
+                <h2 style="font-family: var(--font-display); font-size: 1.8rem; margin: 10px 0; color: var(--primary);">VS</h2>
+                <p style="font-size: 0.82rem; color: var(--text-muted);"><span id="matchVenue">&#128205; {{ match.venue }}</span></p>
+            </div>
+
+            <!-- Team 2 -->
+            <div style="flex: 1; min-width: 140px;">
+                <img src="{{ match.team2.logo_or_placeholder }}" alt="{{ match.team2.name }}" class="team-logo-lg" style="margin: 0 auto 10px;">
+                <h3 style="font-family: var(--font-display); font-size: 1.4rem;">{{ match.team2.name }}</h3>
+            </div>
+        </div>
+
+        <!-- Live Metrics Section -->
+        <div id="liveMetrics" style="display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 2rem;">
+            <div>
+                <p id="battingTeamDisplay" style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Batting Team</p>
+                <h1 style="font-family: var(--font-display); font-size: 3.5rem; font-weight: 800; line-height: 1; margin: 10px 0;"><span id="liveRuns">0</span>/<span id="liveWickets">0</span></h1>
+            </div>
+            <div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Overs</p>
+                <h1 id="liveOvers" style="font-family: var(--font-display); font-size: 3.2rem; font-weight: 800; line-height: 1; margin: 10px 0; color: var(--text-secondary);">0.0</h1>
+            </div>
+            <div class="glass" style="padding: 1rem; border-radius: var(--radius-md); text-align: left; background: rgba(0,0,0,0.25);">
+                <p id="targetLabel" style="font-size: 0.78rem; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">1st Innings</p>
+                <p id="partnerDisplay" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 4px 0;"><span id="partnerRuns">0</span> Runs <span style="font-weight: 400; font-size: 0.85rem; color: var(--text-secondary);">off <span id="partnerBalls">0</span> balls</span></p>
+                <p id="freeHitLabel" style="color: var(--accent); font-weight: 700; font-size: 0.82rem; margin-top: 8px; display: none;">★ FREE HIT Delivery</p>
+            </div>
+        </div>
+
+        <!-- Static Scoreboard Section (if Completed) -->
+        <div id="staticScoreboard" style="display: none; margin-top: 1.5rem;">
+            <div class="glass" style="padding: 1.5rem; display: inline-block; min-width: 300px; text-align: center;">
+                <h3 style="color: var(--primary); font-family: var(--font-display); margin-bottom: 8px;">Final Result</h3>
+                <p id="finalScore" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;"></p>
+                <p id="winnerLabel" style="color: var(--accent); font-weight: bold; font-size: 1rem;"></p>
+            </div>
+        </div>
+
+        <!-- Static Scoreboard Section (if Upcoming) -->
+        <div id="upcomingScoreboard" style="display: none; margin-top: 1.5rem;">
+            <p style="font-size: 1.1rem; color: var(--text-secondary);">&#128197; Match scheduled for: <strong>{{ match.match_date|date:"F d, Y H:i" }} UTC</strong></p>
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 8px;">This match has not started yet. When the toss happens, the scorecard will update automatically here.</p>
+        </div>
+    </div>
+
+    <!-- Active Batsmen / Bowlers Stats -->
+    <div id="personnelSection" class="dash-panel glass" style="display: none; padding: 1.5rem; margin-bottom: 2rem;">
+        <h3 class="panel-title" style="border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px; margin-bottom: 1rem;">Match Details</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+            <!-- Active Batsmen stats table -->
+            <div style="background: rgba(0,0,0,0.15); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">Batsmen</h4>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); text-align: left;">
+                            <th style="padding: 6px 0;">Batsman</th>
+                            <th style="padding: 6px 0; text-align: right;">Runs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="strikerRow" style="padding: 8px 0; font-weight: bold; color: var(--text-primary);">Striker: <span id="strikerName">-</span> 🏏</td>
+                            <td id="strikerRunsDisplay" style="padding: 8px 0; text-align: right; font-weight: bold; color: var(--primary);">0</td>
+                        </tr>
+                        <tr>
+                            <td id="nonStrikerRow" style="padding: 8px 0; color: var(--text-secondary);">Non-Striker: <span id="nonStrikerName">-</span></td>
+                            <td id="nonStrikerRunsDisplay" style="padding: 8px 0; text-align: right; color: var(--text-secondary);">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Active Bowler stats -->
+            <div style="background: rgba(0,0,0,0.15); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold; margin-bottom: 10px; text-transform: uppercase;">Active Bowler</h4>
+                <p style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">🔴 <span id="bowlerName">-</span></p>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Officiating bowler for this over</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Over Delivery Circles -->
+    <div id="overHistorySection" class="dash-panel glass" style="display: none; padding: 1.5rem;">
+        <h3 class="panel-title" style="border-bottom: 1px solid rgba(52,211,153,0.1); padding-bottom: 8px; margin-bottom: 1rem;">This Over History</h3>
+        <div id="overHistoryContainer" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <!-- Delivery history elements -->
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const matchId = "{{ match.pk }}";
+    let pollInterval = null;
+
+    function fetchStatus() {
+        fetch(`/api/match/${matchId}/status/`)
+        .then(res => res.json())
+        .then(data => {
+            updateScorecard(data);
+        })
+        .catch(err => console.error("Polling error:", err));
+    }
+
+    function updateScorecard(data) {
+        const badge = document.getElementById('matchStatusBadge');
+        
+        // Hide all screens initially
+        document.getElementById('liveMetrics').style.display = 'none';
+        document.getElementById('staticScoreboard').style.display = 'none';
+        document.getElementById('upcomingScoreboard').style.display = 'none';
+        document.getElementById('personnelSection').style.display = 'none';
+        document.getElementById('overHistorySection').style.display = 'none';
+
+        if (data.status === 'Upcoming') {
+            badge.className = "badge badge-upcoming";
+            badge.textContent = "Upcoming";
+            document.getElementById('upcomingScoreboard').style.display = 'block';
+        } 
+        else if (data.status === 'Completed') {
+            badge.className = "badge badge-completed";
+            badge.textContent = "Finished";
+            
+            const staticBoard = document.getElementById('staticScoreboard');
+            staticBoard.style.display = 'block';
+            
+            if (data.score) {
+                document.getElementById('finalScore').textContent = `${data.team1} ${data.score.team1_score} - ${data.score.team2_score} ${data.team2}`;
+                document.getElementById('winnerLabel').textContent = data.score.winner === 'No result' ? 'Match Draw / No Result' : `🏆 Winner: ${data.score.winner}`;
+            }
+            
+            // Stop polling since match is complete
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        } 
+        else if (data.status === 'Live') {
+            badge.className = "badge badge-live";
+            badge.style.background = "rgba(248,113,113,0.15)";
+            badge.style.color = "var(--error)";
+            badge.style.border = "1px solid rgba(248,113,113,0.3)";
+            badge.textContent = "● LIVE";
+            
+            document.getElementById('liveMetrics').style.display = 'grid';
+            document.getElementById('personnelSection').style.display = 'block';
+            document.getElementById('overHistorySection').style.display = 'block';
+
+            const state = data.data;
+            document.getElementById('liveRuns').textContent = state.runs;
+            document.getElementById('liveWickets').textContent = state.wickets;
+            document.getElementById('liveOvers').textContent = state.overs;
+            document.getElementById('partnerRuns').textContent = state.partnership_runs;
+            document.getElementById('partnerBalls').textContent = state.partnership_balls;
+            
+            document.getElementById('battingTeamDisplay').textContent = `${state.batting_team} Innings`;
+
+            // Target displaying logic
+            const targetLabel = document.getElementById('targetLabel');
+            if (state.innings === 2) {
+                targetLabel.textContent = `Innings 2 | Target: ${state.target} runs`;
+                targetLabel.style.color = "var(--accent)";
+            } else {
+                targetLabel.textContent = `1st Innings`;
+                targetLabel.style.color = "var(--text-muted)";
+            }
+
+            // Striker details
+            document.getElementById('strikerName').textContent = state.striker ? state.striker : "-";
+            document.getElementById('strikerRunsDisplay').textContent = state.striker ? state.striker_runs : 0;
+
+            // Non striker
+            document.getElementById('nonStrikerName').textContent = state.non_striker ? state.non_striker : "-";
+            document.getElementById('nonStrikerRunsDisplay').textContent = state.non_striker ? state.non_striker_runs : 0;
+
+            // Bowler
+            document.getElementById('bowlerName').textContent = state.bowler ? state.bowler : "Not Assigned";
+
+            // Free hit
+            const freeHitLabel = document.getElementById('freeHitLabel');
+            freeHitLabel.style.display = state.is_free_hit ? 'block' : 'none';
+
+            // Over history visual circles
+            const overHistory = document.getElementById('overHistoryContainer');
+            overHistory.innerHTML = '';
+            if (state.over_history) {
+                state.over_history.split(',').forEach(symbol => {
+                    const circle = document.createElement('span');
+                    circle.style.display = 'inline-flex';
+                    circle.style.alignItems = 'center';
+                    circle.style.justifyContent = 'center';
+                    circle.style.width = '36px';
+                    circle.style.height = '36px';
+                    circle.style.borderRadius = '50%';
+                    circle.style.fontSize = '0.85rem';
+                    circle.style.fontWeight = 'bold';
+                    circle.style.border = '1px solid var(--border)';
+                    circle.textContent = symbol;
+
+                    if (symbol === 'W') {
+                        circle.style.background = 'rgba(248,113,113,0.2)';
+                        circle.style.color = 'var(--error)';
+                        circle.style.borderColor = 'rgba(248,113,113,0.4)';
+                    } else if (symbol.includes('Wd') || symbol.includes('Nb')) {
+                        circle.style.background = 'rgba(251,191,36,0.15)';
+                        circle.style.color = 'var(--accent)';
+                        circle.style.borderColor = 'rgba(251,191,36,0.3)';
+                    } else if (symbol === '4' || symbol === '6') {
+                        circle.style.background = 'rgba(52,211,153,0.15)';
+                        circle.style.color = 'var(--primary)';
+                        circle.style.borderColor = 'rgba(52,211,153,0.3)';
+                    } else {
+                        circle.style.background = 'rgba(255,255,255,0.05)';
+                        circle.style.color = 'var(--text-secondary)';
+                    }
+                    overHistory.appendChild(circle);
+                });
+            } else {
+                overHistory.innerHTML = '<p class="empty-state" style="padding: 0; font-size: 0.85rem;">Ready to bowl the next over.</p>';
+            }
+        }
+    }
+
+    // Start auto polling (every 3 seconds)
+    window.addEventListener('DOMContentLoaded', () => {
+        fetchStatus();
+        pollInterval = setInterval(fetchStatus, 3000);
+    });
+
+    // Clean up interval on close/exit
+    window.addEventListener('beforeunload', () => {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+        }
+    });
+</script>
+{% endblock %}

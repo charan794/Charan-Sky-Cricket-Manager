@@ -1,0 +1,50 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Players &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Players</h1>
+        <form class="search-form" method="get" action="{% url 'players' %}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search player or team..." class="search-input">
+            <select name="role" class="search-select">
+                <option value="">All Roles</option>
+                <option value="Batsman" {% if role_filter == 'Batsman' %}selected{% endif %}>Batsman</option>
+                <option value="Bowler" {% if role_filter == 'Bowler' %}selected{% endif %}>Bowler</option>
+                <option value="All-rounder" {% if role_filter == 'All-rounder' %}selected{% endif %}>All-rounder</option>
+            </select>
+            <select name="sort" class="search-select">
+                <option value="">Sort By</option>
+                <option value="runs" {% if sort_by == 'runs' %}selected{% endif %}>Runs (High &rarr; Low)</option>
+                <option value="wickets" {% if sort_by == 'wickets' %}selected{% endif %}>Wickets (High &rarr; Low)</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        </form>
+    </div>
+
+    {% if players %}
+        <div class="player-grid">
+            {% for player in players %}
+                <div class="player-card glass">
+                    <div class="player-avatar">{{ player.name|first|upper }}</div>
+                    <h4 class="player-name">{{ player.name }}</h4>
+                    <p class="player-team">{{ player.team.name }}</p>
+                    <span class="role-badge role-{{ player.role|slugify }}">{{ player.role }}</span>
+                    <div class="player-stats">
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">{{ player.runs }}</span>
+                            <span class="mini-stat-label">Runs</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">{{ player.wickets }}</span>
+                            <span class="mini-stat-label">Wickets</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No players found. {% if query or role_filter %}Try different filters.{% endif %}</p>
+    {% endif %}
+</section>
+{% endblock %}

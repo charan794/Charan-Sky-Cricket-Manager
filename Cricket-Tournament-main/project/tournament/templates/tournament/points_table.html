@@ -1,0 +1,77 @@
+{% extends 'tournament/base.html' %}
+{% load static %}
+{% block title %}Points Table &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Points Table</h1>
+        <div style="display: flex; gap: 8px;">
+            <button id="refreshPoints" class="btn btn-ghost btn-sm">&#8635; Refresh</button>
+            <button onclick="exportToPDF()" class="btn btn-ghost btn-sm">&#128196; Export PDF</button>
+        </div>
+    </div>
+
+    {% if tournament_winner %}
+        <div class="winner-banner">
+            <div class="winner-card glass">
+                <span class="trophy">&#127942;</span>
+                <div>
+                    <p class="winner-label">Tournament Champion</p>
+                    <h2 class="winner-name">{{ tournament_winner.name }}</h2>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div id="pointsContainer" class="table-wrapper glass">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>Played</th>
+                    <th>Won</th>
+                    <th>Lost</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody id="pointsBody">
+                {% for pt in table %}
+                    <tr class="{% if forloop.counter == 1 and pt.matches_played > 0 %}leader-row{% endif %}">
+                        <td class="rank-cell">{{ forloop.counter }}</td>
+                        <td class="team-cell">
+                            <img src="{{ pt.team.logo_or_placeholder }}" alt="{{ pt.team.name }}" class="team-logo-xs">
+                            {{ pt.team.name }}
+                        </td>
+                        <td>{{ pt.matches_played }}</td>
+                        <td class="win-cell">{{ pt.wins }}</td>
+                        <td class="loss-cell">{{ pt.losses }}</td>
+                        <td class="points-cell">{{ pt.points }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="empty-state">No standings available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="{% static 'tournament/js/points.js' %}"></script>
+<script>
+    function exportToPDF() {
+        const element = document.getElementById('pointsContainer');
+        const opt = {
+            margin:       0.5,
+            filename:     'skycharan-points-table.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, backgroundColor: '#0a0f0d' },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+{% endblock %}

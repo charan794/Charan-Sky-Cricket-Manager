@@ -1,0 +1,57 @@
+{% extends 'tournament/base.html' %}
+{% load static %}
+{% block title %}Results &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Match Results</h1>
+        <button id="refreshResults" class="btn btn-ghost btn-sm">&#8635; Refresh</button>
+    </div>
+
+    <div id="resultsContainer">
+        {% if matches %}
+            <div class="result-grid">
+                {% for match in matches %}
+                    <div class="result-card glass" data-match-id="{{ match.pk }}">
+                        <div class="result-teams">
+                            <div class="result-team {% if match.score.winner == match.team1 %}winner{% endif %}">
+                                <img src="{{ match.team1.logo_or_placeholder }}" alt="{{ match.team1.name }}" class="team-logo-sm">
+                                <div>
+                                    <p class="result-team-name">{{ match.team1.name }}</p>
+                                    <p class="result-score">{{ match.score.team1_score }}</p>
+                                </div>
+                                {% if match.score.winner == match.team1 %}<span class="winner-tag">&#127942;</span>{% endif %}
+                            </div>
+                            <span class="vs">VS</span>
+                            <div class="result-team {% if match.score.winner == match.team2 %}winner{% endif %}">
+                                <img src="{{ match.team2.logo_or_placeholder }}" alt="{{ match.team2.name }}" class="team-logo-sm">
+                                <div>
+                                    <p class="result-team-name">{{ match.team2.name }}</p>
+                                    <p class="result-score">{{ match.score.team2_score }}</p>
+                                </div>
+                                {% if match.score.winner == match.team2 %}<span class="winner-tag">&#127942;</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="result-footer">
+                            <p>&#128205; {{ match.venue }}</p>
+                            <p>&#128197; {{ match.match_date|date:"M d, Y" }}</p>
+                        </div>
+                        {% if match.score.winner %}
+                            <p class="result-winner-text">{{ match.score.winner.name }} won the match</p>
+                        {% else %}
+                            <p class="result-winner-text">No result</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">No completed matches yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'tournament/js/results.js' %}"></script>
+{% endblock %}

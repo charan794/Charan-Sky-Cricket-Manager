@@ -1,0 +1,112 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Manage Matches &mdash; Dashboard{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Manage Matches</h1>
+        <div style="display: flex; gap: var(--space-1); align-items: center;">
+            {% if user.is_superuser %}
+                <a href="{% url 'generate_fixtures' %}" class="btn btn-ghost btn-sm">&#9881; Auto Generate Round-Robin</a>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="back-link" style="margin-left: 12px;">&larr; Dashboard</a>
+        </div>
+    </div>
+
+    <div class="dash-panel glass">
+        <h3 class="panel-title">Schedule New Match</h3>
+        <form method="post" action="{% url 'match_add' %}" class="inline-form">
+            {% csrf_token %}
+            <select name="team1" required>
+                <option value="">Team 1</option>
+                {% for team in teams %}
+                    <option value="{{ team.pk }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="team2" required>
+                <option value="">Team 2</option>
+                {% for team in teams %}
+                    <option value="{{ team.pk }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="datetime-local" name="match_date" required>
+            <input type="text" name="venue" placeholder="Venue" required>
+            {% if user.is_superuser %}
+            <select name="scorer" style="min-width: 180px;">
+                <option value="">Assign Scorer (Optional)</option>
+                {% for s in scorers %}
+                    <option value="{{ s.pk }}">{{ s.username }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            <button type="submit" class="btn btn-primary btn-sm">Schedule</button>
+        </form>
+    </div>
+
+    <div class="match-list">
+        {% for match in matches %}
+            <div class="match-row glass">
+                <div class="match-row-teams">
+                    <span>{{ match.team1.name }}</span>
+                    <span class="vs">VS</span>
+                    <span>{{ match.team2.name }}</span>
+                </div>
+                <div class="match-row-info">
+                    <p>&#128197; {{ match.match_date|date:"M d, Y H:i" }}</p>
+                    <p>&#128205; {{ match.venue }}</p>
+                </div>
+                <span class="badge badge-{{ match.status|slugify }}">{{ match.status }}</span>
+
+                <div style="margin-left: auto; display: flex; gap: var(--space-1); align-items: center;">
+                    {% if match.status == 'Upcoming' or match.status == 'Live' %}
+                        <a href="{% url 'live_scoring' match.pk %}" class="btn btn-primary btn-sm" style="margin-right: 8px;">&#127951; Live Score</a>
+                    {% endif %}
+                    
+                    {% if match.status == 'Upcoming' %}
+                    <details class="edit-details" style="margin-left: 0;">
+                        <summary class="btn btn-ghost btn-sm">Enter Result</summary>
+                        <form method="post" action="{% url 'enter_result' match.pk %}" class="result-form" style="position: absolute; right: 20px; background: var(--bg-secondary); border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm); z-index: 10; gap: 8px; box-shadow: var(--shadow-md); text-align: left;">
+                            {% csrf_token %}
+                            <div class="result-form-row">
+                                <label>{{ match.team1.name }} Score</label>
+                                <input type="number" name="team1_score" min="0" value="0" required>
+                            </div>
+                            <div class="result-form-row">
+                                <label>{{ match.team2.name }} Score</label>
+                                <input type="number" name="team2_score" min="0" value="0" required>
+                            </div>
+                            <div class="result-form-row">
+                                <label>Winner</label>
+                                <select name="winner">
+                                    <option value="{{ match.team1.pk }}">{{ match.team1.name }}</option>
+                                    <option value="{{ match.team2.pk }}">{{ match.team2.name }}</option>
+                                    <option value="">No result</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 8px;">Save Result</button>
+                        </form>
+                    </details>
+                    {% elif match.status == 'Completed' %}
+                    <div class="result-display" style="text-align: right; margin-right: 12px;">
+                        {% if match.score %}
+                            <p class="result-mini" style="font-weight: 600;">{{ match.team1.name }} {{ match.score.team1_score }} &mdash; {{ match.score.team2_score }} {{ match.team2.name }}</p>
+                            {% if match.score.winner %}
+                                <p class="result-winner-mini" style="color: var(--primary);">&#127942; {{ match.score.winner.name }} won</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if user.is_superuser %}
+                <div class="delete-form" style="margin-left: 8px;">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{% url 'match_delete' match.pk %}', '{{ match.team1.name|escapejs }} vs {{ match.team2.name|escapejs }}', 'match')">Delete</button>
+                </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p class="empty-state">No matches scheduled yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Dashboard &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="page-subtitle">Welcome, {{ user.username }}. Manage your tournament below.</p>
+    </div>
+
+    <div class="dash-stats">
+        <a href="{% url 'manage_teams' %}" class="stat-card glass clickable">
+            <span class="stat-icon">&#127937;</span>
+            <p class="stat-value">{{ stats.teams }}</p>
+            <p class="stat-label">Teams</p>
+        </a>
+        <a href="{% url 'manage_players' %}" class="stat-card glass clickable">
+            <span class="stat-icon">&#127939;</span>
+            <p class="stat-value">{{ stats.players }}</p>
+            <p class="stat-label">Players</p>
+        </a>
+        <a href="{% url 'manage_matches' %}" class="stat-card glass clickable">
+            <span class="stat-icon">&#127944;</span>
+            <p class="stat-value">{{ stats.matches }}</p>
+            <p class="stat-label">Matches</p>
+        </a>
+        <div class="stat-card glass">
+            <span class="stat-icon">&#9989;</span>
+            <p class="stat-value">{{ stats.completed }}</p>
+            <p class="stat-label">Completed</p>
+        </div>
+        <div class="stat-card glass">
+            <span class="stat-icon">&#9203;</span>
+            <p class="stat-value">{{ stats.upcoming }}</p>
+            <p class="stat-label">Upcoming</p>
+        </div>
+    </div>
+
+    <div class="dash-actions">
+        <a href="{% url 'manage_teams' %}" class="dash-action-card glass">
+            <span class="dash-action-icon">&#127937;</span>
+            <h3>Manage Teams</h3>
+            <p>Add, edit, or remove teams</p>
+        </a>
+        <a href="{% url 'manage_players' %}" class="dash-action-card glass">
+            <span class="dash-action-icon">&#127939;</span>
+            <h3>Manage Players</h3>
+            <p>Add or remove players from teams</p>
+        </a>
+        <a href="{% url 'manage_matches' %}" class="dash-action-card glass">
+            <span class="dash-action-icon">&#127944;</span>
+            <h3>Manage Matches</h3>
+            <p>Schedule matches and enter results</p>
+        </a>
+        <a href="{% url 'points_table' %}" class="dash-action-card glass">
+            <span class="dash-action-icon">&#128202;</span>
+            <h3>Points Table</h3>
+            <p>View live standings</p>
+        </a>
+    </div>
+
+    <h2 class="section-title" style="margin-top: 2.5rem;">Recent Matches</h2>
+    {% if recent_matches %}
+        <div class="match-list">
+            {% for match in recent_matches %}
+                <div class="match-row glass">
+                    <div class="match-row-teams">
+                        <span>{{ match.team1.name }}</span>
+                        <span class="vs">VS</span>
+                        <span>{{ match.team2.name }}</span>
+                    </div>
+                    <div class="match-row-info">
+                        <p>{{ match.match_date|date:"M d, Y" }}</p>
+                        <p>{{ match.venue }}</p>
+                    </div>
+                    <span class="badge badge-{{ match.status|slugify }}">{{ match.status }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No matches scheduled yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

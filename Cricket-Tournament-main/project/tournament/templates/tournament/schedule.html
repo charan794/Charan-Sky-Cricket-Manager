@@ -1,0 +1,69 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Schedule &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Match Schedule</h1>
+        <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; width: 100%;">
+            <div class="filter-group">
+                <a href="{% url 'schedule' %}" class="filter-chip {% if not status_filter %}active{% endif %}">All</a>
+                <a href="{% url 'schedule' %}?status=Live" class="filter-chip {% if status_filter == 'Live' %}active{% endif %}">Live</a>
+                <a href="{% url 'schedule' %}?status=Upcoming" class="filter-chip {% if status_filter == 'Upcoming' %}active{% endif %}">Upcoming</a>
+                <a href="{% url 'schedule' %}?status=Completed" class="filter-chip {% if status_filter == 'Completed' %}active{% endif %}">Completed</a>
+            </div>
+            <button onclick="exportToPDF()" class="btn btn-ghost btn-sm" style="margin-left: auto;">&#128196; Export PDF</button>
+        </div>
+    </div>
+
+    {% if matches %}
+        <div class="match-list">
+            {% for match in matches %}
+                <div class="match-row glass">
+                    <div class="match-row-teams">
+                        <div class="match-team">
+                            <img src="{{ match.team1.logo_or_placeholder }}" alt="{{ match.team1.name }}" class="team-logo-sm">
+                            <span>{{ match.team1.name }}</span>
+                        </div>
+                        <span class="vs">VS</span>
+                        <div class="match-team">
+                            <img src="{{ match.team2.logo_or_placeholder }}" alt="{{ match.team2.name }}" class="team-logo-sm">
+                            <span>{{ match.team2.name }}</span>
+                        </div>
+                    </div>
+                    <div class="match-row-info">
+                        <p>&#128197; {{ match.match_date|date:"M d, Y" }}</p>
+                        <p>&#128336; {{ match.match_date|date:"H:i" }}</p>
+                        <p>&#128205; {{ match.venue }}</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="badge badge-{{ match.status|slugify }}">{{ match.status }}</span>
+                        {% if match.status == 'Live' or match.status == 'Completed' %}
+                            <a href="{% url 'public_live_match' match.pk %}" class="btn btn-primary btn-sm" style="padding: 6px 12px; font-size: 0.8rem;">Scorecard</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No matches found for this filter.</p>
+    {% endif %}
+</section>
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function exportToPDF() {
+        const element = document.querySelector('.match-list') || document.querySelector('.section');
+        const opt = {
+            margin:       0.5,
+            filename:     'skycharan-schedule.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, backgroundColor: '#0a0f0d' },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'tournament/base.html' %}
+{% block title %}Manage Teams &mdash; Dashboard{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <h1 class="page-title">Manage Teams</h1>
+        <a href="{% url 'dashboard' %}" class="back-link">&larr; Dashboard</a>
+    </div>
+
+    <div class="dash-panel glass">
+        <h3 class="panel-title">Add New Team</h3>
+        <form method="post" action="{% url 'team_add' %}" class="inline-form">
+            {% csrf_token %}
+            <input type="text" name="name" placeholder="Team name" required>
+            <input type="url" name="logo" placeholder="Logo URL (optional)">
+            <input type="text" name="coach_name" placeholder="Coach name">
+            <button type="submit" class="btn btn-primary btn-sm">Add Team</button>
+        </form>
+    </div>
+
+    <div class="team-grid">
+        {% for team in teams %}
+            <div class="team-card glass">
+                <div class="team-card-header">
+                    <img src="{{ team.logo_or_placeholder }}" alt="{{ team.name }}" class="team-logo">
+                    <div>
+                        <h3 class="team-card-name">{{ team.name }}</h3>
+                        <p class="team-card-coach">Coach: {{ team.coach_name|default:"—" }}</p>
+                        <p class="team-card-coach">{{ team.players.count }} players</p>
+                    </div>
+                </div>
+                <details class="edit-details">
+                    <summary class="btn btn-ghost btn-sm">Edit</summary>
+                    <form method="post" action="{% url 'team_edit' team.pk %}" class="inline-form edit-form">
+                        {% csrf_token %}
+                        <input type="text" name="name" value="{{ team.name }}" required>
+                        <input type="url" name="logo" value="{{ team.logo }}" placeholder="Logo URL">
+                        <input type="text" name="coach_name" value="{{ team.coach_name }}" placeholder="Coach">
+                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                    </form>
+                </details>
+                <div class="delete-form">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{% url 'team_delete' team.pk %}', '{{ team.name|escapejs }}', 'team')">Delete</button>
+                </div>
+            </div>
+        {% empty %}
+            <p class="empty-state">No teams yet. Add one above.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

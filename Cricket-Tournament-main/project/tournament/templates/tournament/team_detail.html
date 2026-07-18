@@ -1,0 +1,87 @@
+{% extends 'tournament/base.html' %}
+{% block title %}{{ team.name }} &mdash; SkyCharan Tournament System{% endblock %}
+
+{% block content %}
+<section class="section">
+    <a href="{% url 'teams' %}" class="back-link">&larr; Back to Teams</a>
+    <div class="team-hero glass">
+        <img src="{{ team.logo_or_placeholder }}" alt="{{ team.name }}" class="team-logo-lg">
+        <div class="team-hero-info">
+            <h1 class="page-title">{{ team.name }}</h1>
+            <p class="team-hero-coach">Coach: {{ team.coach_name|default:"Not assigned" }}</p>
+            <div class="team-hero-stats">
+                <div class="mini-stat">
+                    <span class="mini-stat-value">{{ players.count }}</span>
+                    <span class="mini-stat-label">Squad</span>
+                </div>
+                {% if points %}
+                    <div class="mini-stat">
+                        <span class="mini-stat-value">{{ points.matches_played }}</span>
+                        <span class="mini-stat-label">Played</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-value">{{ points.wins }}</span>
+                        <span class="mini-stat-label">Wins</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-value">{{ points.points }}</span>
+                        <span class="mini-stat-label">Points</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid" style="margin-top: 2rem;">
+        <div class="stat-card glass">
+            <span class="stat-icon">&#127951;</span>
+            <p class="stat-value">{{ total_runs }}</p>
+            <p class="stat-label">Squad Runs</p>
+        </div>
+        <div class="stat-card glass">
+            <span class="stat-icon">&#129342;</span>
+            <p class="stat-value">{{ total_wickets }}</p>
+            <p class="stat-label">Squad Wickets</p>
+        </div>
+        <div class="stat-card glass">
+            <span class="stat-icon">&#128262;</span>
+            <p class="stat-value" style="font-size: 1.1rem; padding: 6px 0;">
+                {% if best_batsman %}{{ best_batsman.name }}<br><span style="color: var(--primary);">{{ best_batsman.runs }} runs</span>{% else %}&mdash;{% endif %}
+            </p>
+            <p class="stat-label">Top Batsman</p>
+        </div>
+        <div class="stat-card glass">
+            <span class="stat-icon">&#128081;</span>
+            <p class="stat-value" style="font-size: 1.1rem; padding: 6px 0;">
+                {% if best_bowler %}{{ best_bowler.name }}<br><span style="color: var(--error);">{{ best_bowler.wickets }} wkts</span>{% else %}&mdash;{% endif %}
+            </p>
+            <p class="stat-label">Top Bowler</p>
+        </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top: 2.5rem;">Squad</h2>
+    {% if players %}
+        <div class="player-grid">
+            {% for player in players %}
+                <div class="player-card glass">
+                    <div class="player-avatar">{{ player.name|first|upper }}</div>
+                    <h4 class="player-name">{{ player.name }}</h4>
+                    <span class="role-badge role-{{ player.role|slugify }}">{{ player.role }}</span>
+                    <div class="player-stats">
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">{{ player.runs }}</span>
+                            <span class="mini-stat-label">Runs</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="mini-stat-value">{{ player.wickets }}</span>
+                            <span class="mini-stat-label">Wickets</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">No players in this squad yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,5 +1,7 @@
 #!/bin/sh
 # Deployment entry point for Render / similar platforms
+cd "$(dirname "$0")"
+
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
